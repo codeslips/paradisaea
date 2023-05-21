@@ -1,0 +1,4 @@
+{"basePath": {     
+"paradisaea": "C:\\Users\\adminzjiang04\\Desktop\\paradisaea\\"
+},"gitPath": {
+}}

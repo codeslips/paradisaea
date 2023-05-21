@@ -1,0 +1,191 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:;base64,=">
+<title></title>
+<script src='./static/jquery.min.js'></script>
+<script src='./static/vue3.js'></script>
+<link href='./static/elementplus.css' rel='stylesheet'/>
+<script src='./static/elementplus.js'></script>
+<script src='./static/codemirror.js'></script>
+<script src='./static/javascript.js'></script>
+<link href='./static/codemirror.css' rel='stylesheet'/>
+</head><body><script type="text/javascript" src="./static/jquery.min.js"></script>
+<style>
+  	body{font-size:20px;}
+  	#cm{height:80%;width:90%;}
+    .CodeMirror{
+      background-color:#EAEAEF;
+    }
+	#gitCommit{
+      width: -webkit-fill-available;
+      border: 0.01px solid #ffcdcd;
+      height: 30px;
+    }
+</style>
+<script src="./static/axios.min.js"></script>
+
+</head>
+<body>
+
+<div class="ng-scope">
+<div class="container">
+<div class="row">
+<div class="col-sm-12">
+<input id="gitCommit" type="text" style="width=100%"/>  
+<textarea placeholder="input" autofocus class="ng-pristine ng-valid ta-bind ng-touched" id="cm" ng-show="showHtml" ta-bind="ta-bind" ng-model="html" ></textarea>
+
+</div>
+</div>
+</div>
+</div>
+
+
+<div style="display:none"><form target="_blank" action="" method="post" id="basic_form"><textarea id="basic_formTextarea" name="pv"></textarea></form></div>
+
+
+
+	<script>
+    var url=new URL(window.location.href);
+	var pn=new URLSearchParams(url.search);
+	var tp=pn.get("tp");
+	var mo=pn.get("mo");
+    var fn=pn.get("fn");
+    var path=pn.get("path");
+    var httpfnread=pn.get("httpfnread");
+    var httpfnchange=pn.get("httpfnchange");
+    const fileApi = localStorage.getItem("fileApi") == null ? 'http://127.0.0.1:6069' : localStorage.getItem("fileApi");
+    console.log(fileApi)
+    const commandApi = localStorage.getItem("commandApi") == null ? fileApi : localStorage.getItem("commandApi");
+    console.log(commandApi)
+
+    const paradisaeaFileCommand = commandApi+ '/api/v1/file/command/';
+	var host = pn.get('host')
+    if (host !== undefined && host !== null) {
+      var paurl=host+fileApi + "/api/v1/file/?filePath="+fn;
+      var pourl=host+fileApi + "/api/v1/file/?filePath="+fn;     
+    } else {
+      var paurl=fileApi + "/api/v1/file/?filePath="+fn;
+      var pourl=fileApi + "/api/v1/file/?filePath="+fn;
+    }
+
+	if (fn == null) {
+      var paurl=httpfnread;
+      var pourl=httpfnchange;    
+    }
+
+
+	if(fn!=null){document.querySelector("title").innerHTML=fn;}
+	var editor = CodeMirror.fromTextArea(document.getElementById("cm"), {
+      lineNumbers: true,
+      mode: "javascript",
+      matchBrackets: true,
+      scrollbarStyle: null,
+      lineWrapping:"scroll",
+      extraKeys: {
+            "Tab": function(cm){
+              cm.replaceSelection("   " , "end");
+            }
+           }
+    });
+                      
+                      
+    function init_editor(){
+	$.get(paurl,function(d){
+      editor.getDoc().setValue(d['content']);
+    });
+} 
+
+	init_editor();
+	async function listen_key(){
+		document.body.addEventListener('keyup',async  function(e){
+        console.log(typeof(editor.getValue()))
+			if(e.ctrlKey && e.keyCode===16){
+     	  const options = {
+     	    url: document.getElementById('gitCommit').value == '' ? pourl : paradisaeaFileCommand,
+     	    method: document.getElementById('gitCommit').value == '' ? 'put' : 'post',
+           data: {             
+             'command': {'quick': document.getElementById('gitCommit').value, 'git_path': path},
+             'content': String(editor.getValue()),
+             'filePath': fn,
+             'fileInfo': {}           
+             },
+
+      	  	}
+          console.log(options)
+          const s = await axios.request(options)
+          const ele = document.createElement('div')
+          ele.innerHTML = s.data['tips']
+          if (s.data['tips']  == 'error') {
+             ele.style="position: fixed;height: 50px;top: 50px;left: 50px;color: blue;background-color: #ff0c0c;"
+          } else {
+             ele.style="position: fixed;height: 50px;top: 50px;left: 50px;color: red;background-color: aquamarine;"
+          }
+          
+          document.body.appendChild(ele)
+          setTimeout(() => {ele.remove();document.getElementById('gitCommit').value=''}, 300)
+			}
+          
+			if(e.key === 'Enter'){
+              const c = document.getElementById('gitCommit').value;
+              const cm = c.split('---');
+              if (cm.length == 2) {
+                if (cm[0] == 'fileApi') {
+                  localStorage.setItem('fileApi',cm[1]);
+                }
+                if (cm[0] == 'commandApi') {
+                  localStorage.setItem('commandApi',cm[1]);
+                }
+                if (cm[0] == 'fileRoot') {
+                  localStorage.setItem('fileRoot',cm[1]);
+                }
+                document.getElementById('gitCommit').value='';
+                return true
+              }
+              
+              if (c != ''){
+               document.getElementById('gitCommit').value='';
+               window.open('https://www.google.com/search?q='+ c, '_blank');
+              }  
+			} 
+          
+		});
+	}
+	listen_key();
+	</script>
+
+
+
+
+<div id="toolbox">
+<img src="">
+<div id="toolButtonBox">
+<button id="viewFile">view</button>  
+</div>
+</div>
+
+<style>
+  #toolbox{
+    position:fixed;
+    z-index:1000;
+    right:10px;
+    bottom:20px;
+  }
+</style>
+
+
+<script>
+  $("#toolbox").hover(function () {
+		$("#toolbox img").style('display','none');
+		$("#toolbox #toolButtonBox").style('display','flex');  
+  }, function () {
+		$("#toolbox img").style('display','block');
+		$("#toolbox #toolButtonBox").style('display','none');  	   
+  });
+  $("#viewFile").click(function(){
+        window.open("http://localhost:6006/preview-editor.html?fn="+fn,"_blank");
+  });
+  
+</script>
+
+
+</body></html></body></html>

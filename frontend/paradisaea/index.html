@@ -1,0 +1,171 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:;base64,=">
+<script src='./static/jquery.1.9.0.min.js'></script>
+<script src='./static/vue3.js'></script>
+<link href='./static/elementplus.css' rel='stylesheet'/>
+<script src='./static/elementplus.js'></script>
+<!--
+<script src='./static/xlsx.full.min.js'></script>
+<script src='./static/jexcel.js'></script>
+<link href='./static/jexcel.css' rel='stylesheet'/>
+<script src='./static/jsuites.js'></script>
+<link href='./static/jsuites.css' rel='stylesheet'/>
+-->
+</head><body><script src="./static/axios.min.js"></script>
+<div id="app">
+	<div>
+    <el-cascader v-if="showPathSelect" :options="options" v-model="cascaderValue" @change="handleCascaderChange"
+    v-loading.fullscreen.lock="fullscreenLoading"
+/>
+    </div>  
+
+  <el-button
+    v-loading.fullscreen.lock="fullscreenLoading"
+    type="primary"
+	style="display:none"
+    @click="openFullScreen1"
+  >
+  </el-button>
+
+  	<!--
+  	<el-input type="file" :files="inputFile" @change="handleFileChange($event)"></el-input>
+	-->
+
+      
+	<el-button v-for="value,item,index in basePath" @click="handlePathChange(value, item)">{{item}}</el-button>
+
+
+
+</div>
+
+
+
+<script type="module">
+
+  
+
+function initPath (path) {
+  const newPath = path.map(item => {
+    item.value = item.name
+    item.label = item.name
+    if (item.children) {
+      item.children = initPath(item.children)
+    }
+    return item
+  })
+  return newPath
+}
+
+
+const app = Vue.createApp({
+  data () {
+    return {
+      options: [],
+      cascaderValue: '',
+      inputFile: '',
+      showPathSelect: false,
+      baseUrl: 'http://127.0.0.1:6069/api/v1/file/folder/tree/',
+      fileRootConfig: './fileroot.json',
+      currentPath: 'lodash',
+      fullscreenLoading: false,
+	  basePath: {'paradisaea': 'C:\\Users\\ASRS\\Desktop\\paradisaea\\'},
+	  gitPath: {'paradisaea': 'C:\\Users\\ASRS\\Desktop\\paradisaea'}      
+    }
+  },
+  methods: {
+    handleCascaderChange () {
+      //return true
+      console.log(this.cascaderValue.join('/'))
+      const u = './editor.html?path='+this.gitPath[this.currentPath] + "&fn=" + this.basePath[this.currentPath]+this.cascaderValue.join('/')
+      console.log('20230302',this.basePath[this.currentPath],this.currentPath,this.cascaderValue.join('/'))
+      window.open(u, '_blank')
+    },
+    async getPath () {
+      // const loading = this.loading()
+      this.fullscreenLoading = true
+      const options = {
+        url: this.baseUrl,
+        method: 'POST',  
+        data: {
+           "rootPath": "",
+           "folderPath": this.basePath[this.currentPath],
+           "command": {}
+        }
+      }
+      try {
+        const s = await axios.request(options)
+      	console.log(s.data)
+      	this.options = initPath(s.data['folderTree'].children)
+      	console.log('1', this.options)
+      	this.showPathSelect = true
+      	console.log('1', this.showPathSelect)
+        this.fullscreenLoading = false
+      } catch (e) {
+        console.log(e)
+        this.fullscreenLoading = false
+      }
+    },
+    async getPathConfig () {
+      const options = {
+        url: this.fileRootConfig,
+        method: 'GET',
+      }
+      
+     
+      try {
+        const s = await axios.request(options)
+        console.log(s.data)         
+        this.basePath = s.data['basePath']
+        this.gitPath = s.data['gitPath']
+      } catch (e) {
+      }
+    },    
+    handleFileChange (event) {
+      console.log(event)
+      console.log(this.inputFile)
+    },
+    handlePathChange(u, uname) {
+     this.currentPath = uname
+     this.getPath()      
+    },
+    loading () {
+      const loading = this.$service({
+    	lock: true,
+    	text: 'Loading',
+    	background: 'rgba(0, 0, 0, 0.7)',
+  	  })
+      return loading
+    }
+  },
+  mounted () {
+    // this.showPathSelect = true
+    //  const u = this.baseUrl + this.basePath[this.currentPath]
+    // this.getPath(u)
+    this.baseUrl = localStorage.getItem("fileApi") == null ? 'http://127.0.0.1:6069/api/v1/file/folder/tree/' : localStorage.getItem("fileApi") + '/api/v1/file/folder/tree/';
+    console.log(this.baseUrl)
+    this.fileRootConfig = localStorage.getItem("fileRoot") == null ? './fileroot.json' : localStorage.getItem("fileRoot");
+    console.log(this.fileRootConfig)    
+    
+    this.getPathConfig();
+    
+  }
+}).use(Vue).use(ElementPlus).mount("#app")
+
+
+  
+</script>
+
+<style>
+    .el-cascader-menu__wrap.el-scrollbar__wrap{
+      height: auto;
+      max-height:500px;
+    }
+      
+      
+</style>
+
+
+
+
+<script></script><script></script></body></html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:;base64,=">
+<title></title>
+<script src='./static/jquery.min.js'></script>
+<script src='./static/vue3.js'></script>
+<link href='./static/elementplus.css' rel='stylesheet'/>
+<script src='./static/elementplus.js'></script>
+<script src='./static/codemirror.js'></script>
+<script src='./static/javascript.js'></script>
+<link href='./static/codemirror.css' rel='stylesheet'/>
+</head><body><script type="text/javascript" src="./static/jquery.min.js"></script>
+<style>
+  	body{font-size:20px;}
+  	#cm{height:80%;width:90%;}
+    .CodeMirror{
+      background-color:#EAEAEF;
+    }
+	#gitCommit{
+      width: -webkit-fill-available;
+      border: 0.01px solid #ffcdcd;
+      height: 30px;
+    }
+</style>
+<script src="./static/axios.min.js"></script>
+
+</head>
+<body>
+
+<div class="ng-scope">
+<div class="container">
+<div class="row">
+<div class="col-sm-12">
+<input id="gitCommit" type="text" style="width=100%"/>  
+  
+<div id="cm" contenteditable='true' ></div>
+
+</div>
+</div>
+</div>
+</div>
+
+
+<div style="display:none"><form target="_blank" action="" method="post" id="basic_form"><textarea id="basic_formTextarea" name="pv"></textarea></form></div>
+
+
+
+	<script>
+    var url=new URL(window.location.href);
+	var pn=new URLSearchParams(url.search);
+	var tp=pn.get("tp");
+	var mo=pn.get("mo");
+    var fn=pn.get("fn");
+    const paradisaeaFileCommand = 'http://127.0.0.1:6069/api/v1/file/command/';
+    var httpfnread=pn.get("httpfnread");
+    var httpfnchange=pn.get("httpfnchange");
+	var host = pn.get('host')
+    if (host !== undefined && host !== null) {
+      var paurl=host+"http://127.0.0.1:6068/api/v1/file/?filePath="+fn;
+      var pourl=host+"http://127.0.0.1:6068/api/v1/file/?filePath="+fn;     
+    } else {
+      var paurl="http://127.0.0.1:6068/api/v1/file/?filePath="+fn;
+      var pourl="http://127.0.0.1:6068/api/v1/file/?filePath="+fn;
+    }
+
+	if (fn == null) {
+      var paurl=httpfnread;
+      var pourl=httpfnchange;    
+    }
+
+	var editor = document.getElementById('cm')
+                      
+                      
+    function init_editor(){
+	$.get(paurl,function(d){
+      editor.innerHTML = d['content']
+    });
+} 
+
+	init_editor();
+	async function listen_key(){
+		document.body.addEventListener('keyup',async  function(e){
+		if(e.ctrlKey && e.keyCode===16){
+          
+     	  const options = {
+     	    url: document.getElementById('gitCommit').value == '' ? pourl : paradisaeaFileCommand,
+     	    method: document.getElementById('gitCommit').value == '' ? 'put' : 'post',
+            data: { 
+             'command': {'quick': document.getElementById('gitCommit').value, 'git_path': 'C:\\Users\\ASRS\\Desktop\\bamboo-note\\'},
+             'content': editor.innerHTML,
+             'filePath': fn,
+             'fileInfo': {}
+      	  	}}
+          console.log(options)
+          const s = await axios.request(options)
+          const ele = document.createElement('div')
+          editor.innerHTML = ''
+          ele.innerHTML = s.data['tips']
+          if (s.data['tips']  == 'error') {
+             ele.style="position: fixed;height: 50px;top: 50px;left: 50px;color: blue;background-color: #ff0c0c;"
+          } else {
+             ele.style="position: fixed;height: 50px;top: 50px;left: 50px;color: red;background-color: aquamarine;"
+          }
+          document.body.appendChild(ele)
+          setTimeout(() => {ele.remove();document.getElementById('gitCommit').value=''}, 300)
+			}
+		});
+	}
+	listen_key();
+	</script>
+
+
+
+
+<div id="toolbox">
+<img src="">
+<div id="toolButtonBox">
+<button id="viewFile">view</button>  
+</div>
+</div>
+
+<style>
+  #toolbox{
+    position:fixed;
+    z-index:1000;
+    right:10px;
+    bottom:20px;
+  }
+   #cm{
+    min-height: 200px;
+    top: 50px;
+    position: absolute;
+    border: 1px solid #e7dede;
+    border-radius: 5px;
+    width: 98%;
+   
+   }
+</style>
+
+
+<script>
+//  $("#toolbox").hover(function () {
+//		$("#toolbox img").style('display','none');
+//		$("#toolbox #toolButtonBox").style('display','flex');  
+//  }, function () {
+//		$("#toolbox img").style('display','block');
+//		$("#toolbox #toolButtonBox").style('display','none');  	   
+//  });
+  $("#viewFile").click(function(){
+        window.open("http://localhost:6006/html/preview-editor.html?fn="+fn,"_blank");
+  });
+  
+</script>
+
+
+</body></html></body></html>
